@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>30×30 cm Letter M Template Generator</title>
+<style>
+  :root{--page:30cm}
+  body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;padding:16px;background:#0b1115;color:#e8eef2}
+  h1{font-size:20px;margin:0 0 12px;font-weight:700}
+  .panel{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  .card{background:#131a20;border:1px solid #1e2933;border-radius:14px;padding:14px;box-shadow:0 6px 22px rgba(0,0,0,.25)}
+  label{display:block;font-size:12px;opacity:.9;margin-bottom:6px}
+  input[type=range]{width:100%}
+  .row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+  .num{min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
+  button{cursor:pointer;border:1px solid #2e3a45;background:#18222b;color:#e8eef2;padding:10px 14px;border-radius:12px}
+  button:hover{background:#1b2730}
+  .flex{display:flex;gap:10px;flex-wrap:wrap}
+  .muted{opacity:.8;font-size:12px}
+
+  .sheetWrap{display:flex;justify-content:center}
+  .sheet{width:min(90vw,90vh);aspect-ratio:1;background:#fff;border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.35);position:relative}
+  .sheet>svg{width:100%;height:100%;display:block}
+
+  @media print{
+    body{padding:0;background:white}
+    .panel{display:none}
+    .sheetWrap{margin:0}
+    .sheet{width:auto;height:auto;box-shadow:none;border-radius:0}
+  }
+  @page{size: 30cm 30cm; margin:0}
+</style>
+</head>
+<body>
+  <h1>30×30 cm Letter M Template Generator</h1>
+  <div class="panel">
+    <div class="card">
+      <div class="row">
+        <label for="thickness">Leg / stroke thickness (cm)</label>
+        <div class="num"><span id="thkVal">7.0</span> cm</div>
+      </div>
+      <input id="thickness" type="range" min="3" max="10" value="7" step="0.1" />
+
+      <div class="row" style="margin-top:14px">
+        <label for="peak">Center peak depth from top (cm)</label>
+        <div class="num"><span id="peakVal">6.0</span> cm</div>
+      </div>
+      <input id="peak" type="range" min="0" max="25" value="6" step="0.1" />
+
+      <div class="row" style="margin-top:14px">
+        <label for="grid1">Grid: minor spacing (cm)</label>
+        <div class="num"><span id="g1Val">1</span> cm</div>
+      </div>
+      <input id="grid1" type="range" min="0" max="5" value="1" step="1" />
+
+      <div class="row" style="margin-top:14px">
+        <label for="grid5">Grid: major spacing (cm)</label>
+        <div class="num"><span id="g5Val">5</span> cm</div>
+      </div>
+      <input id="grid5" type="range" min="5" max="10" value="5" step="1" />
+
+      <div class="flex" style="margin-top:16px">
+        <button id="printBtn" title="Opens the browser print dialog at 30×30 cm">Print 30×30</button>
+        <button id="saveSvgBtn">Download SVG</button>
+      </div>
+      <p class="muted" style="margin-top:10px">This version keeps the **M upright** and makes both diagonals **overlap at one bottom join**. Adjust the peak depth to control how high the center is.</p>
+    </div>
+
+    <div class="card sheetWrap">
+      <div class="sheet">
+        <svg id="art" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+          <g id="grid"></g>
+          <rect x="0" y="0" width="30" height="30" fill="none" stroke="#111" stroke-width="0.2" />
+          <g id="letter" fill="none" stroke="#000" stroke-width="0.22"></g>
+          <!-- Labels are drawn dynamically now -->
+          <g id="labels"></g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const $ = (id)=>document.getElementById(id);
+  const art = $('art');
+  const gGrid = $('grid');
+  const gLetter = $('letter');
+  const gLabels = $('labels');
+
+  function setText(id,v){ $(id).textContent = (typeof v==='number'? v.toFixed(1): v); }
+
+  function drawGrid(minor=1, major=5){
+    gGrid.innerHTML=''; gLabels.innerHTML='';
+    // minor grid
+    if(minor>0){
+      for(let i=minor;i<30;i+=minor){
+        const v = document.createElementNS(svgNS,'line');
+        v.setAttribute('x1', i); v.setAttribute('y1', 0);
+        v.setAttribute('x2', i); v.setAttribute('y2', 30);
+        v.setAttribute('stroke', '#cbd5e1'); v.setAttribute('stroke-width', '0.05'); v.setAttribute('opacity', '0.6');
+        gGrid.appendChild(v);
+
+        const h = document.createElementNS(svgNS,'line');
+        h.setAttribute('x1', 0); h.setAttribute('y1', i);
+        h.setAttribute('x2', 30); h.setAttribute('y2', i);
+        h.setAttribute('stroke', '#cbd5e1'); h.setAttribute('stroke-width', '0.05'); h.setAttribute('opacity', '0.6');
+        gGrid.appendChild(h);
+      }
+    }
+    // major grid + labels
+    for(let i=major;i<30;i+=major){
+      const v = document.createElementNS(svgNS,'line');
+      v.setAttribute('x1', i); v.setAttribute('y1', 0);
+      v.setAttribute('x2', i); v.setAttribute('y2', 30);
+      v.setAttribute('stroke', '#64748b'); v.setAttribute('stroke-width', '0.12');
+      gGrid.appendChild(v);
+
+      const h = document.createElementNS(svgNS,'line');
+      h.setAttribute('x1', 0); h.setAttribute('y1', i);
+      h.setAttribute('x2', 30); h.setAttribute('y2', i);
+      h.setAttribute('stroke', '#64748b'); h.setAttribute('stroke-width', '0.12');
+      gGrid.appendChild(h);
+
+      // TOP labels (x-axis)
+      const tx = document.createElementNS(svgNS,'text');
+      tx.setAttribute('x', i); tx.setAttribute('y', 1.8);
+      tx.setAttribute('text-anchor','middle'); tx.setAttribute('font-size','1'); tx.setAttribute('fill','#111');
+      tx.textContent = `${i} cm`; gLabels.appendChild(tx);
+
+      // LEFT labels (y-axis)
+      const ty = document.createElementNS(svgNS,'text');
+      ty.setAttribute('x', 1.2); ty.setAttribute('y', i+0.1);
+      ty.setAttribute('dominant-baseline','middle'); ty.setAttribute('font-size','1'); ty.setAttribute('fill','#111');
+      ty.textContent = `${i} cm`; gLabels.appendChild(ty);
+    }
+    // Show 30 cm marks as well
+    ['top','left'].forEach(side=>{
+      const t = document.createElementNS(svgNS,'text');
+      if(side==='top'){ t.setAttribute('x', 30); t.setAttribute('y', 1.8); t.setAttribute('text-anchor','end'); }
+      else { t.setAttribute('x', 1.2); t.setAttribute('y', 30); t.setAttribute('dominant-baseline','ideographic'); }
+      t.setAttribute('font-size','1'); t.setAttribute('fill','#111'); t.textContent = '30 cm';
+      gLabels.appendChild(t);
+    });
+  }
+
+  function thickQuad(A,B,stroke){
+    const [Ax,Ay] = A, [Bx,By]=B;
+    const vx=Bx-Ax, vy=By-Ay;
+    const n = Math.hypot(vx,vy)||1;
+    const nx=-vy/n, ny=vx/n;
+    const offx = nx*stroke/2, offy = ny*stroke/2;
+    return [[Ax+offx,Ay+offy],[Bx+offx,By+offy],[Bx-offx,By-offy],[Ax-offx,Ay-offy]];
+  }
+
+  function polygon(points, opts={}){
+    const el = document.createElementNS(svgNS,'polygon');
+    el.setAttribute('points', points.map(p=>p.join(',')).join(' '));
+    for(const k in opts){ el.setAttribute(k, opts[k]); }
+    return el;
+  }
+  function rect(x,y,w,h, opts={}){
+    const el = document.createElementNS(svgNS,'rect');
+    el.setAttribute('x', x); el.setAttribute('y', y);
+    el.setAttribute('width', w); el.setAttribute('height', h);
+    for(const k in opts){ el.setAttribute(k, opts[k]); }
+    return el;
+  }
+
+  // extend endpoints along the line so the two diagonals overlap at the base
+  function extendEndpoints(A, B, extA, extB){
+    let [Ax,Ay] = A, [Bx,By] = B;
+    const vx = Bx - Ax, vy = By - Ay;
+    const len = Math.hypot(vx, vy) || 1;
+    const ux = vx/len, uy = vy/len;
+    return [[Ax - ux*extA, Ay - uy*extA], [Bx + ux*extB, By + uy*extB]];
+  }
+
+  function redraw(){
+    const t = parseFloat($('thickness').value);
+    const peak = parseFloat($('peak').value); // distance from top
+
+    setText('thkVal', t); setText('peakVal', peak);
+    setText('g1Val', $('grid1').value); setText('g5Val', $('grid5').value);
+
+    drawGrid(parseInt($('grid1').value), parseInt($('grid5').value));
+    gLetter.innerHTML='';
+
+    const tClamped = Math.max(1, Math.min(12, t));
+    const L = rect(0,0,tClamped,30,{fill:'none'});
+    const R = rect(30-tClamped,0,tClamped,30,{fill:'none'});
+
+    // Upright M with overlapping bottom join
+    const baseY = 30 - peak;           // map peak slider to a bottom join height
+    const base = [15, baseY];          // shared overlap point
+    const ext = tClamped * 0.7;        // extend tips so they overlap clearly
+
+    // diagonals from base up to top inner corners
+    const [A1,B1] = extendEndpoints(base, [tClamped,0], ext, 0);
+    const [A2,B2] = extendEndpoints(base, [30 - tClamped,0], ext, 0);
+
+    const leftDiag  = thickQuad(A1, B1, tClamped);
+    const rightDiag = thickQuad(A2, B2, tClamped);
+
+    [polygon(leftDiag), polygon(rightDiag), L, R].forEach(el=>{
+      el.setAttribute('stroke','#000');
+      el.setAttribute('stroke-width','0.22');
+      el.setAttribute('fill','none');
+      gLetter.appendChild(el);
+    });
+  }
+
+  $('saveSvgBtn').addEventListener('click',()=>{
+    const clone = art.cloneNode(true);
+    const blob = new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'M_template_30x30cm.svg';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  $('printBtn').addEventListener('click',()=>{ window.print(); });
+  ['thickness','peak','grid1','grid5'].forEach(id=>$(id).addEventListener('input', redraw));
+  redraw();
+</script>
+</body>
+</html>
